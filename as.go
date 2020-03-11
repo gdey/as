@@ -119,6 +119,42 @@ func Int(it interface{}) (int, bool) {
 	return int(i), ok
 }
 
+// Uint64 tries to coerce it into a int64, returning the coerced int64
+// and weather it was able to do it.
+func Uint64(it interface{}) (uint64, bool) {
+	if it == nil {
+		return 0, false
+	}
+	if str, ok := it.(string); ok {
+		i, err := strconv.ParseUint(str, 10, 64)
+		return i, err == nil
+	}
+
+	val := reflect.Indirect(reflect.ValueOf(it))
+	switch val.Kind() {
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
+		return uint64(val.Int()), true
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+		return val.Uint(), true
+	case reflect.Float32, reflect.Float64:
+		return uint64(val.Float()), true
+	case reflect.Bool:
+		if val.Bool() {
+			return 1, true
+		}
+		return 0, true
+	default:
+		return 0, false
+	}
+}
+
+// Uint tries to coerce it into a uint, returning the coerced uint
+// and weather it was able to do it.
+func Uint(it interface{}) (uint, bool) {
+	i, ok := Uint64(it)
+	return uint(i), ok
+}
+
 // Float64 tries to coerce it into a float64, returning the coerced float64
 // and weather it was able to do it.
 func Float64(it interface{}) (float64, bool) {

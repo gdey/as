@@ -119,7 +119,61 @@ func TestInt(t *testing.T) {
 		t.Run(name, fn(tc))
 	}
 }
+func TestUint(t *testing.T) {
+	type tcase struct {
+		it interface{}
+		i  uint64
+		ok bool
+	}
+	fn := func(tc tcase) func(*testing.T) {
+		return func(t *testing.T) {
+			t.Run("uint64", func(t *testing.T) {
 
+				i, ok := as.Uint64(tc.it)
+				if ok != tc.ok {
+					t.Errorf("ok, expected %v got %v", tc.ok, ok)
+					return
+				}
+				if i != tc.i {
+					t.Errorf("i, expected %v got %v", tc.i, i)
+					return
+				}
+
+			})
+			t.Run("uint", func(t *testing.T) {
+
+				i, ok := as.Uint(tc.it)
+				if ok != tc.ok {
+					t.Errorf("ok, expected %v got %v", tc.ok, ok)
+					return
+				}
+				if i != uint(tc.i) {
+					t.Errorf("i, expected %v got %v", tc.i, i)
+					return
+				}
+
+			})
+		}
+	}
+	tests := map[string]tcase{
+		"nil":        {ok: false, i: 0, it: nil},
+		"abcde":      {ok: false, i: 0, it: "abcde"},
+		"[]int":      {ok: false, i: 0, it: make([]int, 1)},
+		"0":          {ok: true, i: 0, it: "0"},
+		"#0":         {ok: true, i: 0, it: 0},
+		"bool#true":  {ok: true, i: 1, it: true},
+		"bool#false": {ok: true, i: 0, it: false},
+		"float#0":    {ok: true, i: 0, it: 0.0},
+		"float#1.0":  {ok: true, i: 1, it: 1.0},
+		"uint#0.0":   {ok: true, i: 0, it: uint(0)},
+		"uint#1.0":   {ok: true, i: 1, it: uint(1)},
+		"uint32#0.0": {ok: true, i: 0, it: uint32(0)},
+		"uint32#1.0": {ok: true, i: 1, it: uint32(1)},
+	}
+	for name, tc := range tests {
+		t.Run(name, fn(tc))
+	}
+}
 func TestFloat64(t *testing.T) {
 	type tcase struct {
 		it interface{}
