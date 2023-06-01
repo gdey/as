@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/arolek/p"
 	"github.com/gdey/as"
 )
 
@@ -47,7 +46,7 @@ func TestBool(t *testing.T) {
 		"F":            {ok: true, b: false, it: "F"},
 		"f":            {ok: true, b: false, it: "f"},
 		"bool#false":   {ok: true, b: false, it: false},
-		"*bool#false":  {ok: true, b: false, it: p.Bool(false)},
+		"*bool#false":  {ok: true, b: false, it: as.Pointer(false)},
 		"*bool#nil":    {ok: true, b: false, it: (*bool)(nil)},
 		"true":         {ok: true, b: true, it: "true"},
 		"True":         {ok: true, b: true, it: "True"},
@@ -57,7 +56,7 @@ func TestBool(t *testing.T) {
 		"#1":           {ok: true, b: true, it: int(1)},
 		"uint#1":       {ok: true, b: true, it: uint(1)},
 		"bool#true":    {ok: true, b: true, it: true},
-		"*bool#true":   {ok: true, b: true, it: p.Bool(true)},
+		"*bool#true":   {ok: true, b: true, it: as.Pointer(true)},
 	}
 	for name, tc := range tests {
 		t.Run(name, fn(tc))
@@ -264,66 +263,30 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestInterfaceSlice(t *testing.T) {
-	type tcase struct {
-		it  interface{}
-		s   []interface{}
-		err error
+
+	type interfaceSliceTCase[U any] struct{
+		it  []U
+		s   []any
 	}
-	fn := func(tc tcase) func(*testing.T) {
+
+func interfaceSliceFn[U any](tc interfaceSliceTCase[U]) func(*testing.T){
 		return func(t *testing.T) {
-			s, err := as.InterfaceSlice(tc.it)
-			if tc.err == nil && err != nil {
-				t.Errorf("ok, expected nil got %v", err)
-				return
-			}
-			if tc.err != nil && err == nil {
-				t.Errorf("ok, expected %v got nil", tc.err)
-				return
-			}
-
-			if tc.err != nil && err.Error() != tc.err.Error() {
-				t.Errorf("ok, expected %v got %v", tc.err, err)
-				return
-			}
-
+			s := as.InterfaceSlice(tc.it...)
 			if !reflect.DeepEqual(tc.s, s) {
 				t.Errorf("s, expected '%v' got '%v'", tc.s, s)
 				return
 			}
 		}
-	}
+}
 
-	const (
-		arraySlice = "array or slice"
-	)
+func TestInterfaceSlice(t *testing.T) {
 
-	errFor := func(it interface{}) as.InvalidTypeErr {
-		return as.InvalidTypeErr{
-			Expected: arraySlice,
-			Have:     reflect.TypeOf(it),
-		}
-	}
-
-	tests := map[string]tcase{
-		"nil":           {s: []interface{}{}, it: nil},
-		"[]int":         {s: []interface{}{0}, it: make([]int, 1)},
-		"[]interface{}": {s: make([]interface{}, 1), it: make([]interface{}, 1)},
-		"abcde":         {it: "abcde", err: errFor("abcde")},
-		"#0":            {it: 0, err: errFor(0)},
-		"bool#true":     {it: true, err: errFor(true)},
-		"bool#false":    {it: false, err: errFor(false)},
-		"float#0":       {it: 0.0, err: errFor(0.0)},
-		"float#1.0":     {it: 1.0, err: errFor(1.0)},
-		"uint#0":        {it: uint(0), err: errFor(uint(0))},
-		"uint#1":        {it: uint(1), err: errFor(uint(1))},
-		"uint32#0":      {it: uint32(0), err: errFor(uint32(0))},
-		"uint32#1":      {it: uint32(1), err: errFor(uint32(1))},
-		"err":           {it: errors.New("error value"), err: errFor(errors.New("error value"))},
-		"nulString":     {it: nullString{}, err: errFor(nullString{})},
-		"func":          {it: func() {}, err: errFor(func() {})},
+	tests := map[string]func(*testing.T){
+		"nil":           interfaceSliceFn(interfaceSliceTCase[int]{s: []interface{}{}, it: nil}),
+		"[]int":         interfaceSliceFn(interfaceSliceTCase[int]{s: []interface{}{1}, it: []int{1}}),
+		"[]interface{}": interfaceSliceFn(interfaceSliceTCase[interface{}]{s: make([]interface{}, 1), it: make([]interface{}, 1)}),
 	}
 	for name, tc := range tests {
-		t.Run(name, fn(tc))
+		t.Run(name, tc)
 	}
 }

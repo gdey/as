@@ -18,25 +18,12 @@ func (err InvalidTypeErr) Error() string {
 }
 
 // InterfaceSlice ties to coerce slice into a slice of interfaces.
-func InterfaceSlice(slice interface{}) ([]interface{}, error) {
-	if slice == nil {
-		return []interface{}{}, nil
+func InterfaceSlice[U any](vals ...U) (ret []any) {
+	ret = make([]any, 0, len(vals))
+	for i := range vals {
+		ret = append(ret, vals[i])
 	}
-	if s, ok := slice.([]interface{}); ok {
-		return s, nil
-	}
-	s := reflect.ValueOf(slice)
-	switch kind := s.Kind(); kind {
-	case reflect.Array, reflect.Slice:
-		l := s.Len()
-		ret := make([]interface{}, l)
-		for i := 0; i < l; i++ {
-			ret[i] = s.Index(i).Interface()
-		}
-		return ret, nil
-	default:
-		return nil, InvalidTypeErr{Expected: "array or slice", Have: reflect.TypeOf(slice)}
-	}
+	return ret
 }
 
 // Bool converts an arbitrary input into a boolean. If it could not coerce the
@@ -203,3 +190,7 @@ func String(it interface{}) (string, bool) {
 	}
 	return fmt.Sprint(it), true
 }
+
+// Pointer returns a pointer of the given type
+func Pointer[U any](v U)*U { return &v }
+
